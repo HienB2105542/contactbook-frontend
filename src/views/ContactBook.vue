@@ -8,12 +8,11 @@
                 Danh bạ
                 <i class="fas fa-address-book"></i>
             </h4>
-            <contactList v-if="fillteredContactsCount > 0" :contacts="fillteredContacts"
-                v-model:activeIndex="activeIndex" />
+            <ContactList v-if="filteredContacts.length > 0" :contacts="filteredContacts" v-model:activeIndex="activeIndex" />
             <p v-else>Không có liên hệ nào.</p>
 
             <div class="mt-3 row justify-content-around align-items-center">
-                <button class="btn btn-sm btn-primary" @click="refreshList()">
+                <button class="btn btn-sm btn-primary" @click="refreshList">
                     <i class="fas fa-redo"></i> Làm mới
                 </button>
 
@@ -34,10 +33,7 @@
                     <i class="fas fa-address-card"></i>
                 </h4>
                 <ContactCard :contact="activeContact" />
-                <router-link :to="{
-                    name: 'contact.edit',
-                    params: { id: activeContact._id },
-                }">
+                <router-link :to="{ name: 'contact.edit', params: { id: activeContact._id } }">
                     <span class="mt-2 badge badge-warning">
                         <i class="fas fa-edit"></i> Hiệu chỉnh</span>
                 </router-link>
@@ -55,10 +51,9 @@ import contactService from '@/services/contact.service';
 export default {
     components: {
         ContactCard,
-        ContactList,
+        InputSearch,
         ContactList,
     },
-    //Đoạn mã xử lý đầy đủ sẽ trình bày bên dưới 
     data() {
         return {
             contacts: [],
@@ -67,65 +62,63 @@ export default {
         };
     },
     watch: {
-        // Giám sát các thay đổi của biến searchText.
-        // Bỏ chọn phần tử đang được chọn trong danh sách.
         searchText() {
             this.activeIndex = -1;
         },
     },
     computed: {
-        // Chuyển các đối tượng contact thành chuỗi để tiện cho tìm kiếm.
-        contactStrings() {
-            return this.contacts.map((contact) => {
-                const { name, email, address, phone } = contact;
-                return [name, email, address, phone].join("");
-            });
+        filteredContacts() {
+            if (!this.searchText) return this.contacts;
+            return this.contacts.filter(contact =>
+                [contact.name, contact.email, contact.address, contact.phone].join(" ").includes(this.searchText)
+            );
         },
-    },
-    filteredContacts() {
-        if (!this.searchText) return this.contacts;
-        return this.contacts.filter((_contact, index) =>
-            this.contactStrings[index].includes(this.searchText)
-        );
-    },
-    activeContact() {
-        if (this.activeIndex < 0) return null;
-        return this.filteredContacts[this.activeIndex];
-    },
-    filteredContactsCount() {
-        return this.filteredContacts.length;
+        activeContact() {
+            return this.activeIndex >= 0 ? this.filteredContacts[this.activeIndex] : null;
+        }
     },
     methods: {
         async retrieveContacts() {
             try {
-                this.contacts = await ContactService.getAll();
+                console.log("Đang gọi API lấy danh bạ...");
+                this.contacts = await contactService.getAll();
+                console.log("Danh bạ nhận được:", this.contacts);
             } catch (error) {
-                console.log(error);
+                console.error("Lỗi khi lấy danh bạ:", error);
             }
-        }
-    },
-    refreshList() {
-        this.retrieveContacts();
-        this.activeIndex = -1;
-    },
-    async removeAllContacts() {
-        if (confirm("Bạn muốn xóa tất cả Liên hệ?")) {
-            try {
-                await ContactService.deleteAll();
-                this.refreshList();
-            } catch (error) {
-                console.log(error);
+        },
+        refreshList() {
+            console.log("Nút 'Làm mới' được bấm!");
+            this.retrieveContacts();
+            this.activeIndex = -1;
+        },
+        async removeAllContacts() {
+            console.log("Nút 'Xóa tất cả' được bấm!");
+            if (confirm("Bạn muốn xóa tất cả Liên hệ?")) {
+                try {
+                    console.log("Đang xóa danh bạ...");
+                    await contactService.deleteAll();
+                    console.log("Xóa thành công!");
+                    this.refreshList();
+                } catch (error) {
+                    console.error("Lỗi khi xóa danh bạ:", error);
+                }
             }
+        },
+        goToAddContact() {
+            console.log("Nút 'Thêm mới' được bấm!");
+            this.$router.push({ name: 'contact.add' });
+        },
+        testClick() {
+            console.log("Nút kiểm tra hoạt động!");
         }
-    },
-    goToAddContact() {
-        this.$router.push({ name: "contact.add" });
     },
     mounted() {
         this.refreshList();
     },
 };
 </script>
+
 <style scoped>
 .page {
     text-align: left;

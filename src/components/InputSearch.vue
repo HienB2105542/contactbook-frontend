@@ -5,9 +5,10 @@ export default {
     },
     emits: ["submit", "update:modeValue"],
     methods: {
-        updateModeValue(e){
-            this.$emit("update:modeValue, e.target.value");
+        updateModeValue(e) {
+            this.$emit("update:modeValue", e.target.value); 
         },
+
         submit(){
             this.$emit("submit");
         },
